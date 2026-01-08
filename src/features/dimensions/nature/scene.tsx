@@ -1,0 +1,369 @@
+// src/features/dimensions/nature/scene.tsx
+
+import * as React from "react";
+import {
+  motion,
+  useTransform,
+  useSpring,
+  useReducedMotion,
+  useMotionValue,
+  useMotionTemplate,
+  type MotionValue,
+} from "motion/react";
+
+import { ParallaxPanel } from "@/components/Parrallax/ParrallaxPanel";
+import { useSceneScroll } from "@/motion/UseSceneScroll";
+
+type Props = {
+  glowA: string;
+  glowB: string;
+};
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function mulberry32(seed: number) {
+  return function () {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function NatureParallaxStage({
+  glowA,
+  glowB,
+  reduced,
+  scrollYProgress,
+}: {
+  glowA: string;
+  glowB: string;
+  reduced: boolean;
+  scrollYProgress: MotionValue<number>;
+}) {
+  // ✅ Smooth the progress (this is the “buttery” part)
+  // - higher stiffness = more responsive (less “lag”)
+  // - good damping = no jitter/overshoot
+  const p = useSpring(scrollYProgress, {
+    stiffness: 260,
+    damping: 34,
+    mass: 0.55,
+  });
+
+  // Assets (from /public)
+  const hill1 = "/parallax/nature/hill1.png";
+  const hill2 = "/parallax/nature/hill2.png";
+  const hill3 = "/parallax/nature/hill3.png";
+  const hill4 = "/parallax/nature/hill4.png";
+  const hill5 = "/parallax/nature/hill5.png";
+  const leaf = "/parallax/nature/leaf.png";
+  const plant = "/parallax/nature/plant.png";
+  const tree = "/parallax/nature/tree.png";
+
+  // Transcript-style parallax
+  const textY = useTransform(p, [0, 1], [0, 220]);
+  const leafX = useTransform(p, [0, 1], [0, 260]);
+  const leafY = useTransform(p, [0, 1], [0, -260]);
+
+  // Hills
+  const h1Y = useTransform(p, [0, 1], [0, 18]);
+  const h2Y = useTransform(p, [0, 1], [0, 32]);
+  const h3Y = useTransform(p, [0, 1], [0, 55]);
+  const h4Y = useTransform(p, [0, 1], [0, 78]);
+  const h5Y = useTransform(p, [0, 1], [0, 110]);
+
+  const h3X = useTransform(p, [0, 1], [0, 48]);
+  const h4X = useTransform(p, [0, 1], [0, -58]);
+  const h5X = useTransform(p, [0, 1], [0, 0]);
+
+  const plantY = useTransform(p, [0, 1], [0, 135]);
+  const treeY = useTransform(p, [0, 1], [0, 40]);
+
+  // Cursor-react humidity highlight
+  const cx = useMotionValue(0);
+  const cy = useMotionValue(0);
+  const cxs = useSpring(cx, { stiffness: 180, damping: 28, mass: 0.6 });
+  const cys = useSpring(cy, { stiffness: 180, damping: 28, mass: 0.6 });
+
+  const highlightX = useMotionTemplate`calc(50% + ${cxs} * 10%)`;
+  const highlightY = useMotionTemplate`calc(45% + ${cys} * 8%)`;
+
+  // Fog bg-position drift (cursor + micro scroll) — light + cheap
+  const fogBiasPX = useTransform(cxs, [-1, 1], [-22, 22]);
+  const fogBiasPY = useTransform(cys, [-1, 1], [-14, 14]);
+  const fogScrollPX = useTransform(p, [0, 1], [0, -18]);
+  const fogScrollPY = useTransform(p, [0, 1], [0, 10]);
+
+  const fogPosX = useTransform([fogBiasPX, fogScrollPX], ([a, b]: number[]) => a + b);
+  const fogPosY = useTransform([fogBiasPY, fogScrollPY], ([a, b]: number[]) => a + b);
+  const fogBgPos = useMotionTemplate`calc(20% + ${fogPosX}px) calc(60% + ${fogPosY}px)`;
+
+  // ✅ Deterministic spores (subtle)
+  const spores = React.useMemo(() => {
+    const count = 14; // slightly less work than 16
+    const baseSeed = 1337;
+    return Array.from({ length: count }).map((_, i) => {
+      const rnd = mulberry32(baseSeed + i * 97);
+      const x = rnd() * 100;
+      const y = rnd() * 100;
+      const s = 0.45 + rnd() * 0.9;
+      const o = 0.14 + rnd() * 0.26;
+      const d = 4.4 + rnd() * 5.6;
+      const delay = rnd() * 2.0;
+      const bias = (rnd() - 0.5) * 2;
+      return { i, x, y, s, o, d, delay, bias };
+    });
+  }, []);
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (reduced) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    cx.set((px - 0.5) * 2);
+    cy.set((py - 0.5) * 2);
+  };
+
+  const onPointerLeave = () => {
+    cx.set(0);
+    cy.set(0);
+  };
+
+  const shimmerTransition = { duration: 9.5, repeat: Infinity, ease: "easeInOut" as const };
+
+  // ✅ GPU-friendly class for moving layers
+  const gpuLayer =
+    "transform-gpu will-change-transform [backface-visibility:hidden]";
+
+  return (
+    <motion.div className="relative" onPointerMove={onPointerMove} onPointerLeave={onPointerLeave}>
+      <div className="relative h-[140vh]">
+        <div className="sticky top-0 h-[70vh] sm:h-[72vh] lg:h-[75vh] overflow-hidden">
+          {/* Base atmosphere */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(1200px 700px at 50% 18%, rgba(10,14,12,0.55), rgba(5,6,10,0.95))",
+            }}
+          />
+
+          {/* TEXT */}
+          <motion.div
+            className={`absolute left-1/2 top-[16%] -translate-x-1/2 text-center px-6 ${gpuLayer}`}
+            style={{ y: reduced ? 0 : textY }}
+          >
+            <div className="text-xs uppercase tracking-[0.24em] text-white/65">The Big Scrub</div>
+            <h2 className="mt-3 text-3xl sm:text-5xl font-semibold tracking-tight text-white/92 drop-shadow-[0_12px_30px_rgba(0,0,0,0.45)]">
+              Rainforest Parallax
+            </h2>
+            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/70 mx-auto">
+              Scroll inside this scene to feel layers separate: hills, canopy, fog, and foreground life.
+            </p>
+          </motion.div>
+
+          {/* Leaf */}
+          <motion.img
+            src={leaf}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className={`pointer-events-none absolute right-[-6%] top-[-10%] w-[560px] sm:w-[640px] lg:w-[720px] max-w-none select-none opacity-[0.9] ${gpuLayer}`}
+            style={{ x: reduced ? 0 : leafX, y: reduced ? 0 : leafY }}
+          />
+
+          {/* Hills */}
+          <motion.img
+            src={hill1}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className={`pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.55] ${gpuLayer}`}
+            style={{ y: reduced ? 0 : h1Y }}
+          />
+          <motion.img
+            src={hill2}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className={`pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.65] ${gpuLayer}`}
+            style={{ y: reduced ? 0 : h2Y }}
+          />
+          <motion.img
+            src={hill3}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className={`pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.78] ${gpuLayer}`}
+            style={{ y: reduced ? 0 : h3Y, x: reduced ? 0 : h3X }}
+          />
+          <motion.img
+            src={hill4}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className={`pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.82] ${gpuLayer}`}
+            style={{ y: reduced ? 0 : h4Y, x: reduced ? 0 : h4X }}
+          />
+          <motion.img
+            src={hill5}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className={`pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.9] ${gpuLayer}`}
+            style={{ y: reduced ? 0 : h5Y, x: reduced ? 0 : h5X }}
+          />
+
+          {/* Tree */}
+          <motion.img
+            src={tree}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className={`pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.82] ${gpuLayer}`}
+            style={{ y: reduced ? 0 : treeY }}
+          />
+
+          {/* Plant */}
+          <motion.img
+            src={plant}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className={`pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.96] ${gpuLayer}`}
+            style={{ y: reduced ? 0 : plantY }}
+          />
+
+          {/* Humidity highlight */}
+          <motion.div
+            className="absolute inset-0"
+            aria-hidden
+            style={{
+              background: `radial-gradient(520px 420px at ${highlightX} ${highlightY}, rgba(255,255,255,0.055), transparent 62%)`,
+              opacity: reduced ? 0 : 1,
+              filter: "blur(14px)",
+            }}
+          />
+
+          {/* Shimmer */}
+          {!reduced && (
+            <motion.div
+              className="pointer-events-none absolute inset-0"
+              aria-hidden
+              style={{
+                background: `radial-gradient(220px 180px at ${highlightX} ${highlightY}, rgba(255,255,255,0.06), transparent 70%)`,
+                filter: "blur(10px)",
+                mixBlendMode: "screen",
+                opacity: 0.06,
+              }}
+              animate={{ opacity: [0.045, 0.075, 0.05], scale: [1, 1.015, 1] }}
+              transition={shimmerTransition}
+            />
+          )}
+
+          {/* Fog */}
+          <motion.div
+            className="absolute inset-0"
+            aria-hidden
+            style={{
+              background: `
+                radial-gradient(900px 520px at 20% 60%, rgba(255,255,255,0.07), transparent 62%),
+                radial-gradient(1000px 600px at 80% 55%, rgba(255,255,255,0.06), transparent 64%),
+                radial-gradient(1100px 700px at 50% 85%, rgba(255,255,255,0.05), transparent 72%)
+              `,
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: reduced ? "20% 60%" : (fogBgPos as unknown as string),
+              filter: "blur(18px)",
+              opacity: 0.82,
+            }}
+          />
+
+          {/* Spores */}
+          <div className="absolute inset-0">
+            {spores.map((s) => (
+              <motion.div
+                key={s.i}
+                className="absolute rounded-full"
+                style={{
+                  left: `${s.x}%`,
+                  top: `${s.y}%`,
+                  width: `${s.s}rem`,
+                  height: `${s.s}rem`,
+                  background: `radial-gradient(circle at 35% 35%, rgba(255,255,255,0.16), transparent 55%),
+                               radial-gradient(circle at 50% 50%, ${glowA}24, transparent 62%),
+                               radial-gradient(circle at 55% 55%, ${glowB}18, transparent 68%)`,
+                  opacity: clamp(s.o, 0.12, 0.5),
+                  boxShadow: `0 0 16px ${glowA}12, 0 0 22px ${glowB}0c`,
+                  mixBlendMode: "screen",
+                }}
+                aria-hidden
+                animate={
+                  reduced
+                    ? { opacity: s.o }
+                    : {
+                        x: [0, 7 + s.bias * 3, 0],
+                        y: [0, -9 + s.bias * 2.5, 0],
+                        opacity: [s.o * 0.85, s.o, s.o * 0.8],
+                      }
+                }
+                transition={
+                  reduced
+                    ? { duration: 0 }
+                    : { duration: s.d, repeat: Infinity, ease: "easeInOut", delay: s.delay }
+                }
+              />
+            ))}
+          </div>
+
+          {/* Vignette */}
+          <div
+            className="absolute inset-0"
+            aria-hidden
+            style={{
+              background:
+                "radial-gradient(circle at 50% 40%, transparent 45%, rgba(0,0,0,0.58) 78%)",
+            }}
+          />
+        </div>
+
+        <div className="absolute bottom-6 left-0 right-0 flex justify-center">
+          <div className="rounded-full border border-white/10 bg-black/35 px-4 py-2 text-xs text-white/60 backdrop-blur-[2px]">
+            Scroll inside the scene ↓
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+export function NatureScene({ glowA, glowB }: Props) {
+  const reduced = !!useReducedMotion();
+  const { setProgress } = useSceneScroll();
+
+  return (
+    <motion.div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]">
+      <ParallaxPanel
+        reducedMotion={reduced}
+        ariaLabel="Big Scrub scene. Scroll inside this panel to move the parallax layers."
+        // ✅ Native scroll = smoothest, least glitchy
+        inertia={false}
+        onProgress={(v) => setProgress("nature", v)}
+      >
+        {({ scrollYProgress }) => (
+          <NatureParallaxStage
+            glowA={glowA}
+            glowB={glowB}
+            reduced={reduced}
+            scrollYProgress={scrollYProgress}
+          />
+        )}
+      </ParallaxPanel>
+
+      <div className="border-t border-white/10 px-6 py-4 text-xs text-white/55">
+        Humidity motion: fog background drift + smooth spring parallax.
+      </div>
+    </motion.div>
+  );
+}
