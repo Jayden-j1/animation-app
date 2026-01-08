@@ -53,14 +53,14 @@ function NatureParallaxStage({
   });
 
   // Assets (from /public)
-  const hill1 = "/parallax/nature/hill1.png";
-  const hill2 = "/parallax/nature/hill2.png";
-  const hill3 = "/parallax/nature/hill3.png";
-  const hill4 = "/parallax/nature/hill4.png";
-  const hill5 = "/parallax/nature/hill5.png";
-  const leaf = "/parallax/nature/leaf.png";
-  const plant = "/parallax/nature/plant.png";
-  const tree = "/parallax/nature/tree.png";
+  const hill1 = "/parrallax/nature/hill1.png";
+  const hill2 = "/parrallax/nature/hill2.png";
+  const hill3 = "/parrallax/nature/hill3.png";
+  const hill4 = "/parrallax/nature/hill4.png";
+  const hill5 = "/parrallax/nature/hill5.png";
+  const leaf = "/parrallax/nature/leaf.png";
+  const plant = "/parrallax/nature/plant.png";
+  const tree = "/parrallax/nature/tree.png";
 
   // Transcript-style parallax
   const textY = useTransform(p, [0, 1], [0, 220]);
@@ -157,7 +157,7 @@ function NatureParallaxStage({
           >
             <div className="text-xs uppercase tracking-[0.24em] text-white/65">The Big Scrub</div>
             <h2 className="mt-3 text-3xl sm:text-5xl font-semibold tracking-tight text-white/92 drop-shadow-[0_12px_30px_rgba(0,0,0,0.45)]">
-              Rainforest Parallax
+              GABUN
             </h2>
             <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/70 mx-auto">
               Scroll inside this scene to feel layers separate: hills, canopy, fog, and foreground life.
@@ -362,7 +362,7 @@ export function NatureScene({ glowA, glowB }: Props) {
       </ParallaxPanel>
 
       <div className="border-t border-white/10 px-6 py-4 text-xs text-white/55">
-        Humidity motion: fog background drift + smooth spring parallax.
+        From Guban we collected some of the plants we used to make the fish nets 'Jalum Ngarbany' and dilly 'Jili' bags.
       </div>
     </motion.div>
   );
