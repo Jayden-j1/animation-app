@@ -160,7 +160,7 @@ function NatureParallaxStage({
               GABUN
             </h2>
             <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/70 mx-auto">
-              Scroll inside this scene to feel layers separate: hills, canopy, fog, and foreground life.
+              Scroll inside this scene to feel layers separate: hills, canopy, and foreground.
             </p>
           </motion.div>
 
@@ -362,7 +362,7 @@ export function NatureScene({ glowA, glowB }: Props) {
       </ParallaxPanel>
 
       <div className="border-t border-white/10 px-6 py-4 text-xs text-white/55">
-        From Guban we collected some of the plants we used to make the fish nets 'Jalum Ngarbany' and dilly 'Jili' bags. - Uncle Rick Cook?
+        "From Guban we collected some of the plants we used to make the fish nets 'Jalum Ngarbany' and dilly 'Jili' bags" - Uncle Rick Cook?
       </div>
     </motion.div>
   );

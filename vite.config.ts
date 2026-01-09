@@ -3,8 +3,9 @@
 // PURPOSE
 // -------
 // Vite config for React + TypeScript.
-// Adds Tailwind v4 plugin + `@` alias that maps to /src.
-// TypeScript also needs matching paths config (tsconfig.app.json).
+// - Tailwind v4 plugin
+// - "@" alias to /src
+// - Relative base so builds work in GitHub Pages AND local preview
 
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
@@ -15,7 +16,10 @@ export default defineConfig({
   plugins: [tailwindcss(), react()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src")
-    }
-  }
+      "@": path.resolve(__dirname, "src"),
+    },
+  },
+
+  // ✅ Works everywhere: GitHub Pages subpath + local preview
+  base: "./",
 });

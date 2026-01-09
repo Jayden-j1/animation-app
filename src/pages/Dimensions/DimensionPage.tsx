@@ -1,6 +1,5 @@
 // src/pages/Dimensions/DimensionPage.tsx
 
-import * as React from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion } from "motion/react";
 

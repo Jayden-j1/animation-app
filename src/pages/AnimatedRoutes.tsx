@@ -3,7 +3,6 @@
 // Wrap react-router <Routes> with AnimatePresence so routes can animate out.
 // Exit transitions can read the current scene scroll progress from SceneScrollProvider.
 
-import * as React from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "motion/react";
 
