@@ -98,7 +98,7 @@ export function HomePage() {
           transition={{ duration: 0.6, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
           className="mt-3 max-w-2xl text-sm leading-relaxed text-white/65"
         >
-          Each sphere is a portal. Hover to feel it breathe. Click to enter.
+          Each sphere is a portal. Click to enter.
         </motion.p>
       </section>
 
