@@ -32,9 +32,7 @@ function mulberry32(seed: number) {
   };
 }
 
-// ✅ Vite + GitHub Pages safe public asset URL helper
-// - Works locally (BASE_URL="/") and on GH Pages (BASE_URL="/animation-app/")
-// - Avoids absolute-root URLs that break on GH Pages.
+// ✅ Vite base-safe asset helper (GitHub Pages safe)
 function publicAsset(pathFromPublic: string) {
   const base = import.meta.env.BASE_URL || "/";
   const cleanBase = base.endsWith("/") ? base : `${base}/`;
@@ -55,23 +53,20 @@ function NatureParallaxStage({
 }) {
   const p = useSpring(scrollYProgress, { stiffness: 120, damping: 24, mass: 0.9 });
 
-  // ✅ Assets (from /public) — GH Pages safe
-  // NOTE: folder is "parallax" (not "parrallax")
-  const hill1 = publicAsset("parallax/nature/hill1.png");
-  const hill2 = publicAsset("parallax/nature/hill2.png");
-  const hill3 = publicAsset("parallax/nature/hill3.png");
-  const hill4 = publicAsset("parallax/nature/hill4.png");
-  const hill5 = publicAsset("parallax/nature/hill5.png");
-  const leaf = publicAsset("parallax/nature/leaf.png");
-  const plant = publicAsset("parallax/nature/plant.png");
-  const tree = publicAsset("parallax/nature/tree.png");
+  // Assets (from /public) — base-safe
+  const hill1 = publicAsset("parrallax/nature/hill1.png");
+  const hill2 = publicAsset("parrallax/nature/hill2.png");
+  const hill3 = publicAsset("parrallax/nature/hill3.png");
+  const hill4 = publicAsset("parrallax/nature/hill4.png");
+  const hill5 = publicAsset("parrallax/nature/hill5.png");
+  const leaf = publicAsset("parrallax/nature/leaf.png");
+  const plant = publicAsset("parrallax/nature/plant.png");
+  const tree = publicAsset("parrallax/nature/tree.png");
 
-  // Transcript-style parallax
-  const textY = useTransform(p, [0, 1], [0, 220]);
+  // Parallax transforms
   const leafX = useTransform(p, [0, 1], [0, 260]);
   const leafY = useTransform(p, [0, 1], [0, -260]);
 
-  // Hills
   const h1Y = useTransform(p, [0, 1], [0, 18]);
   const h2Y = useTransform(p, [0, 1], [0, 32]);
   const h3Y = useTransform(p, [0, 1], [0, 55]);
@@ -100,7 +95,6 @@ function NatureParallaxStage({
   const fogScrollPX = useTransform(p, [0, 1], [0, -18]);
   const fogScrollPY = useTransform(p, [0, 1], [0, 10]);
 
-  // ✅ TS-safe: number[] in, number out
   const fogPosX = useTransform([fogBiasPX, fogScrollPX], ([a, b]: number[]) => a + b);
   const fogPosY = useTransform([fogBiasPY, fogScrollPY], ([a, b]: number[]) => a + b);
 
@@ -113,7 +107,6 @@ function NatureParallaxStage({
   const hueScroll = useTransform(p, [0, 1], [-0.35, 0.35]);
   const contrastScroll = useTransform(p, [0, 1], [0.01, -0.01]);
 
-  // ✅ TS-safe: number[] in, number out
   const hue = useTransform([hueTime, hueScroll], ([a, b]: number[]) => a + b);
   const contrast = useTransform([contrastTime, contrastScroll], ([a, b]: number[]) => a + b);
 
@@ -168,6 +161,11 @@ function NatureParallaxStage({
 
   const shimmerTransition = { duration: 9.5, repeat: Infinity, ease: "easeInOut" as const };
 
+  // ✅ Mobile fix: anchor terrain to the bottom of the container
+  // This keeps the “ground” filling the lower part instead of floating up.
+  const fullLayerClass =
+    "pointer-events-none absolute left-0 top-0 w-full h-full max-w-none select-none object-cover object-bottom block transform-gpu";
+
   return (
     <motion.div
       className="relative"
@@ -177,6 +175,7 @@ function NatureParallaxStage({
     >
       <div className="relative h-[140vh]">
         <div className="sticky top-0 h-[70vh] sm:h-[72vh] lg:h-[75vh] overflow-hidden">
+          {/* Base atmosphere */}
           <div
             className="absolute inset-0"
             style={{
@@ -185,19 +184,33 @@ function NatureParallaxStage({
             }}
           />
 
-          <motion.div
-            className="absolute left-1/2 top-[16%] -translate-x-1/2 text-center px-6"
-            style={{ y: reduced ? 0 : textY }}
-          >
-            <div className="text-xs uppercase tracking-[0.24em] text-white/65">The Big Scrub</div>
-            <h2 className="mt-3 text-3xl sm:text-5xl font-semibold tracking-tight text-white/92 drop-shadow-[0_12px_30px_rgba(0,0,0,0.45)]">
-              Rainforest Parallax
-            </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/70 mx-auto">
-              Scroll inside this scene to feel layers separate: hills, canopy, fog, and foreground life.
-            </p>
-          </motion.div>
+          {/* ✅ Bottom atmosphere fill (helps when PNGs have transparent lower area) */}
+          <div
+            className="pointer-events-none absolute inset-0 z-[5]"
+            aria-hidden="true"
+            style={{
+              background:
+                "linear-gradient(to bottom, rgba(0,0,0,0.00) 35%, rgba(0,0,0,0.35) 70%, rgba(0,0,0,0.55) 100%)",
+            }}
+          />
 
+          {/* ✅ TEXT PINNED + ALWAYS VISIBLE */}
+          <div className="absolute left-1/2 top-[14%] -translate-x-1/2 text-center px-5 z-40 w-[min(92%,42rem)]">
+            <div className="mx-auto rounded-2xl bg-black/50 px-4 py-3 backdrop-blur-[8px] ring-1 ring-white/15 shadow-[0_12px_40px_rgba(0,0,0,0.45)]">
+              <div className="text-xs uppercase tracking-[0.24em] text-white/80">
+                The Big Scrub
+              </div>
+              <h2 className="mt-3 text-3xl sm:text-5xl font-semibold tracking-tight text-white drop-shadow-[0_12px_30px_rgba(0,0,0,0.55)]">
+                Rainforest Parallax
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-white/85">
+                Scroll inside this scene to feel layers separate: hills, canopy, fog, and foreground
+                life.
+              </p>
+            </div>
+          </div>
+
+          {/* Leaf (foreground accent) */}
           <motion.img
             src={leaf}
             alt=""
@@ -205,10 +218,11 @@ function NatureParallaxStage({
             draggable={false}
             decoding="async"
             loading="eager"
-            className="pointer-events-none absolute right-[-6%] top-[-10%] w-[560px] sm:w-[640px] lg:w-[720px] max-w-none select-none opacity-[0.9]"
-            style={{ x: reduced ? 0 : leafX, y: reduced ? 0 : leafY }}
+            className="pointer-events-none absolute right-[-6%] top-[-10%] w-[560px] sm:w-[640px] lg:w-[720px] max-w-none select-none opacity-[0.9] transform-gpu z-30"
+            style={{ x: reduced ? 0 : leafX, y: reduced ? 0 : leafY, willChange: "transform" }}
           />
 
+          {/* Hills / Tree / Plant (anchored bottom) */}
           <motion.img
             src={hill1}
             alt=""
@@ -216,8 +230,8 @@ function NatureParallaxStage({
             draggable={false}
             decoding="async"
             loading="eager"
-            className="pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.55]"
-            style={{ y: reduced ? 0 : h1Y }}
+            className={`${fullLayerClass} opacity-[0.55] z-10`}
+            style={{ y: reduced ? 0 : h1Y, willChange: "transform" }}
           />
           <motion.img
             src={hill2}
@@ -226,8 +240,8 @@ function NatureParallaxStage({
             draggable={false}
             decoding="async"
             loading="eager"
-            className="pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.65]"
-            style={{ y: reduced ? 0 : h2Y }}
+            className={`${fullLayerClass} opacity-[0.65] z-10`}
+            style={{ y: reduced ? 0 : h2Y, willChange: "transform" }}
           />
           <motion.img
             src={hill3}
@@ -236,8 +250,8 @@ function NatureParallaxStage({
             draggable={false}
             decoding="async"
             loading="eager"
-            className="pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.78]"
-            style={{ y: reduced ? 0 : h3Y, x: reduced ? 0 : h3X }}
+            className={`${fullLayerClass} opacity-[0.78] z-10`}
+            style={{ y: reduced ? 0 : h3Y, x: reduced ? 0 : h3X, willChange: "transform" }}
           />
           <motion.img
             src={hill4}
@@ -246,8 +260,8 @@ function NatureParallaxStage({
             draggable={false}
             decoding="async"
             loading="eager"
-            className="pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.82]"
-            style={{ y: reduced ? 0 : h4Y, x: reduced ? 0 : h4X }}
+            className={`${fullLayerClass} opacity-[0.82] z-10`}
+            style={{ y: reduced ? 0 : h4Y, x: reduced ? 0 : h4X, willChange: "transform" }}
           />
           <motion.img
             src={hill5}
@@ -256,8 +270,8 @@ function NatureParallaxStage({
             draggable={false}
             decoding="async"
             loading="eager"
-            className="pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.9]"
-            style={{ y: reduced ? 0 : h5Y, x: reduced ? 0 : h5X }}
+            className={`${fullLayerClass} opacity-[0.9] z-20`}
+            style={{ y: reduced ? 0 : h5Y, x: reduced ? 0 : h5X, willChange: "transform" }}
           />
 
           <motion.img
@@ -267,8 +281,8 @@ function NatureParallaxStage({
             draggable={false}
             decoding="async"
             loading="eager"
-            className="pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.82]"
-            style={{ y: reduced ? 0 : treeY }}
+            className={`${fullLayerClass} opacity-[0.82] z-20`}
+            style={{ y: reduced ? 0 : treeY, willChange: "transform" }}
           />
 
           <motion.img
@@ -278,12 +292,13 @@ function NatureParallaxStage({
             draggable={false}
             decoding="async"
             loading="eager"
-            className="pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.96]"
-            style={{ y: reduced ? 0 : plantY }}
+            className={`${fullLayerClass} opacity-[0.96] z-30`}
+            style={{ y: reduced ? 0 : plantY, willChange: "transform" }}
           />
 
+          {/* Humidity highlight */}
           <motion.div
-            className="absolute inset-0"
+            className="absolute inset-0 z-30"
             aria-hidden
             style={{
               background: `radial-gradient(520px 420px at ${highlightX} ${highlightY}, rgba(255,255,255,0.055), transparent 62%)`,
@@ -292,9 +307,10 @@ function NatureParallaxStage({
             }}
           />
 
+          {/* Shimmer */}
           {!reduced && (
             <motion.div
-              className="pointer-events-none absolute inset-0"
+              className="pointer-events-none absolute inset-0 z-30"
               aria-hidden
               style={{
                 background: `radial-gradient(220px 180px at ${highlightX} ${highlightY}, rgba(255,255,255,0.06), transparent 70%)`,
@@ -307,8 +323,9 @@ function NatureParallaxStage({
             />
           )}
 
+          {/* Fog */}
           <motion.div
-            className="absolute inset-0"
+            className="absolute inset-0 z-30"
             aria-hidden
             style={{
               background: `
@@ -323,7 +340,8 @@ function NatureParallaxStage({
             }}
           />
 
-          <div className="absolute inset-0">
+          {/* Spores */}
+          <div className="absolute inset-0 z-30">
             {spores.map((s) => (
               <motion.div
                 key={s.i}
@@ -359,8 +377,9 @@ function NatureParallaxStage({
             ))}
           </div>
 
+          {/* Vignette */}
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 z-30"
             aria-hidden
             style={{
               background: "radial-gradient(circle at 50% 40%, transparent 45%, rgba(0,0,0,0.58) 78%)",
@@ -368,8 +387,9 @@ function NatureParallaxStage({
           />
         </div>
 
+        {/* Scroll hint */}
         <div className="absolute bottom-6 left-0 right-0 flex justify-center">
-          <div className="rounded-full border border-white/10 bg-black/35 px-4 py-2 text-xs text-white/60 backdrop-blur-[2px]">
+          <div className="rounded-full border border-white/10 bg-black/35 px-4 py-2 text-xs text-white/70 backdrop-blur-[2px]">
             Scroll inside the scene ↓
           </div>
         </div>
