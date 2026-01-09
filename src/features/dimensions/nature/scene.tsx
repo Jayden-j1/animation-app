@@ -54,14 +54,14 @@ function NatureParallaxStage({
   const p = useSpring(scrollYProgress, { stiffness: 120, damping: 24, mass: 0.9 });
 
   // Assets (from /public) — base-safe
-  const hill1 = publicAsset("parrallax/nature/hill1.png");
-  const hill2 = publicAsset("parrallax/nature/hill2.png");
-  const hill3 = publicAsset("parrallax/nature/hill3.png");
-  const hill4 = publicAsset("parrallax/nature/hill4.png");
-  const hill5 = publicAsset("parrallax/nature/hill5.png");
-  const leaf = publicAsset("parrallax/nature/leaf.png");
-  const plant = publicAsset("parrallax/nature/plant.png");
-  const tree = publicAsset("parrallax/nature/tree.png");
+  const hill1 = publicAsset("parallax/nature/hill1.png");
+  const hill2 = publicAsset("parallax/nature/hill2.png");
+  const hill3 = publicAsset("parallax/nature/hill3.png");
+  const hill4 = publicAsset("parallax/nature/hill4.png");
+  const hill5 = publicAsset("parallax/nature/hill5.png");
+  const leaf = publicAsset("parallax/nature/leaf.png");
+  const plant = publicAsset("parallax/nature/plant.png");
+  const tree = publicAsset("parallax/nature/tree.png");
 
   // Parallax transforms
   const leafX = useTransform(p, [0, 1], [0, 260]);
