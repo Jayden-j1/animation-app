@@ -45,7 +45,7 @@ export const DIMENSIONS: Dimension[] = [
     title: "Jingi Walla Blaganmirr (Welcome Everyone)",
     subtitle: "Organic flow, cycles, breath",
     intro:
-      "Below is Gabun or 'The Big Scrub', once the largest lowland subtropical rainforest in Australia. Early European settlers had cleared 99%, today only 1% remains. Take a moment to imagine how great the Gabun would have been.",
+      "Below is Gabun or 'The Big Scrub', once the largest lowland subtropical rainforest in Australia. European settlers cleared 99%, 1% remains. Take a moment to imagine how great the Gabun would have been.",
     glowA: "#29ff90",
     glowB: "#a09eff",
     motion: {
