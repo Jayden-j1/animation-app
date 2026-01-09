@@ -201,7 +201,7 @@ function NatureParallaxStage({
                 The Big Scrub
               </div>
               <h2 className="mt-3 text-3xl sm:text-5xl font-semibold tracking-tight text-white drop-shadow-[0_12px_30px_rgba(0,0,0,0.55)]">
-                Rainforest Parallax
+                Gabun
               </h2>
               <p className="mt-4 text-sm leading-relaxed text-white/85">
                 Scroll inside this scene to feel layers separate: hills, canopy, fog, and foreground
