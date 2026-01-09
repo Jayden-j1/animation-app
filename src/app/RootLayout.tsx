@@ -3,26 +3,23 @@
 // PURPOSE
 // -------
 // Root layout wrapper for the router.
-// - Wraps all routes in a single LayoutGroup so shared layoutId transitions
-//   can continue across route navigation (Home -> Dimension).
+// - Wraps all routes in a single LayoutGroup so shared layoutId transitions continue.
 // - PageTransition handles enter/exit between routes.
-// - RootErrorBoundary prevents blank screens in preview/prod.
+// - IMPORTANT: Always paints the app background to prevent white "blank" frames.
 
 import { Outlet } from "react-router-dom";
 import { LayoutGroup } from "motion/react";
 import { PageTransition } from "@/components/Transition/PageTransition";
-import { RootErrorBoundary } from "./RootErrorBoundary";
 
 export function RootLayout() {
   return (
-    <RootErrorBoundary>
-      <LayoutGroup>
-        <div className="min-h-dvh">
-          <PageTransition>
-            <Outlet />
-          </PageTransition>
-        </div>
-      </LayoutGroup>
-    </RootErrorBoundary>
+    <LayoutGroup>
+      {/* ✅ Always paint background so exit/enter never reveals white document */}
+      <div className="min-h-dvh bg-[#05060a] text-white">
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
+      </div>
+    </LayoutGroup>
   );
 }

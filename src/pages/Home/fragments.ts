@@ -42,7 +42,7 @@ export type Dimension = {
 export const DIMENSIONS: Dimension[] = [
   {
     id: "nature",
-    title: "Jingi Walla Blaganmirr (Welcome Everyone)",
+    title: "Nature: Jingi Walla Blaganmirr (Welcome Everyone)",
     subtitle: "Organic flow, cycles, breath",
     intro:
       "Below is Gabun or 'The Big Scrub', once the largest lowland subtropical rainforest in Australia. European settlers cleared 99%, 1% remains. Take a moment to imagine how great the Gabun would have been.",
