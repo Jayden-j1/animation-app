@@ -32,6 +32,16 @@ function mulberry32(seed: number) {
   };
 }
 
+// ✅ Vite + GitHub Pages safe public asset URL helper
+// - Works locally (BASE_URL="/") and on GH Pages (BASE_URL="/animation-app/")
+// - Avoids absolute-root URLs that break on GH Pages.
+function publicAsset(pathFromPublic: string) {
+  const base = import.meta.env.BASE_URL || "/";
+  const cleanBase = base.endsWith("/") ? base : `${base}/`;
+  const cleanPath = pathFromPublic.replace(/^\/+/, "");
+  return `${cleanBase}${cleanPath}`;
+}
+
 function NatureParallaxStage({
   glowA,
   glowB,
@@ -43,24 +53,18 @@ function NatureParallaxStage({
   reduced: boolean;
   scrollYProgress: MotionValue<number>;
 }) {
-  // ✅ Smooth the progress (this is the “buttery” part)
-  // - higher stiffness = more responsive (less “lag”)
-  // - good damping = no jitter/overshoot
-  const p = useSpring(scrollYProgress, {
-    stiffness: 260,
-    damping: 34,
-    mass: 0.55,
-  });
+  const p = useSpring(scrollYProgress, { stiffness: 120, damping: 24, mass: 0.9 });
 
-  // Assets (from /public)
-  const hill1 = "/parrallax/nature/hill1.png";
-  const hill2 = "/parrallax/nature/hill2.png";
-  const hill3 = "/parrallax/nature/hill3.png";
-  const hill4 = "/parrallax/nature/hill4.png";
-  const hill5 = "/parrallax/nature/hill5.png";
-  const leaf = "/parrallax/nature/leaf.png";
-  const plant = "/parrallax/nature/plant.png";
-  const tree = "/parrallax/nature/tree.png";
+  // ✅ Assets (from /public) — GH Pages safe
+  // NOTE: folder is "parallax" (not "parrallax")
+  const hill1 = publicAsset("parallax/nature/hill1.png");
+  const hill2 = publicAsset("parallax/nature/hill2.png");
+  const hill3 = publicAsset("parallax/nature/hill3.png");
+  const hill4 = publicAsset("parallax/nature/hill4.png");
+  const hill5 = publicAsset("parallax/nature/hill5.png");
+  const leaf = publicAsset("parallax/nature/leaf.png");
+  const plant = publicAsset("parallax/nature/plant.png");
+  const tree = publicAsset("parallax/nature/tree.png");
 
   // Transcript-style parallax
   const textY = useTransform(p, [0, 1], [0, 220]);
@@ -84,34 +88,65 @@ function NatureParallaxStage({
   // Cursor-react humidity highlight
   const cx = useMotionValue(0);
   const cy = useMotionValue(0);
-  const cxs = useSpring(cx, { stiffness: 180, damping: 28, mass: 0.6 });
-  const cys = useSpring(cy, { stiffness: 180, damping: 28, mass: 0.6 });
+  const cxs = useSpring(cx, { stiffness: 140, damping: 26, mass: 0.9 });
+  const cys = useSpring(cy, { stiffness: 140, damping: 26, mass: 0.9 });
 
   const highlightX = useMotionTemplate`calc(50% + ${cxs} * 10%)`;
   const highlightY = useMotionTemplate`calc(45% + ${cys} * 8%)`;
 
-  // Fog bg-position drift (cursor + micro scroll) — light + cheap
+  // Fog bg-position drift (cursor + micro scroll)
   const fogBiasPX = useTransform(cxs, [-1, 1], [-22, 22]);
   const fogBiasPY = useTransform(cys, [-1, 1], [-14, 14]);
   const fogScrollPX = useTransform(p, [0, 1], [0, -18]);
   const fogScrollPY = useTransform(p, [0, 1], [0, 10]);
 
+  // ✅ TS-safe: number[] in, number out
   const fogPosX = useTransform([fogBiasPX, fogScrollPX], ([a, b]: number[]) => a + b);
   const fogPosY = useTransform([fogBiasPY, fogScrollPY], ([a, b]: number[]) => a + b);
+
   const fogBgPos = useMotionTemplate`calc(20% + ${fogPosX}px) calc(60% + ${fogPosY}px)`;
 
-  // ✅ Deterministic spores (subtle)
+  // Micro “breath”
+  const hueTime = useMotionValue(0);
+  const contrastTime = useMotionValue(1);
+
+  const hueScroll = useTransform(p, [0, 1], [-0.35, 0.35]);
+  const contrastScroll = useTransform(p, [0, 1], [0.01, -0.01]);
+
+  // ✅ TS-safe: number[] in, number out
+  const hue = useTransform([hueTime, hueScroll], ([a, b]: number[]) => a + b);
+  const contrast = useTransform([contrastTime, contrastScroll], ([a, b]: number[]) => a + b);
+
+  const filterFx = useMotionTemplate`hue-rotate(${hue}deg) contrast(${contrast})`;
+
+  React.useEffect(() => {
+    if (reduced) return;
+
+    let raf = 0;
+    const start = performance.now();
+
+    const loop = (t: number) => {
+      const elapsed = (t - start) / 1000;
+      hueTime.set(Math.sin(elapsed / 10) * 1.7);
+      contrastTime.set(1 + Math.sin(elapsed / 12 + 1.7) * 0.018);
+      raf = requestAnimationFrame(loop);
+    };
+
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [reduced, hueTime, contrastTime]);
+
   const spores = React.useMemo(() => {
-    const count = 14; // slightly less work than 16
+    const count = 16;
     const baseSeed = 1337;
     return Array.from({ length: count }).map((_, i) => {
       const rnd = mulberry32(baseSeed + i * 97);
       const x = rnd() * 100;
       const y = rnd() * 100;
-      const s = 0.45 + rnd() * 0.9;
-      const o = 0.14 + rnd() * 0.26;
-      const d = 4.4 + rnd() * 5.6;
-      const delay = rnd() * 2.0;
+      const s = 0.45 + rnd() * 0.95;
+      const o = 0.14 + rnd() * 0.28;
+      const d = 4.2 + rnd() * 6.0;
+      const delay = rnd() * 2.2;
       const bias = (rnd() - 0.5) * 2;
       return { i, x, y, s, o, d, delay, bias };
     });
@@ -133,15 +168,15 @@ function NatureParallaxStage({
 
   const shimmerTransition = { duration: 9.5, repeat: Infinity, ease: "easeInOut" as const };
 
-  // ✅ GPU-friendly class for moving layers
-  const gpuLayer =
-    "transform-gpu will-change-transform [backface-visibility:hidden]";
-
   return (
-    <motion.div className="relative" onPointerMove={onPointerMove} onPointerLeave={onPointerLeave}>
+    <motion.div
+      className="relative"
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
+      style={{ filter: reduced ? "none" : (filterFx as unknown as string) }}
+    >
       <div className="relative h-[140vh]">
         <div className="sticky top-0 h-[70vh] sm:h-[72vh] lg:h-[75vh] overflow-hidden">
-          {/* Base atmosphere */}
           <div
             className="absolute inset-0"
             style={{
@@ -150,37 +185,38 @@ function NatureParallaxStage({
             }}
           />
 
-          {/* TEXT */}
           <motion.div
-            className={`absolute left-1/2 top-[16%] -translate-x-1/2 text-center px-6 ${gpuLayer}`}
+            className="absolute left-1/2 top-[16%] -translate-x-1/2 text-center px-6"
             style={{ y: reduced ? 0 : textY }}
           >
             <div className="text-xs uppercase tracking-[0.24em] text-white/65">The Big Scrub</div>
             <h2 className="mt-3 text-3xl sm:text-5xl font-semibold tracking-tight text-white/92 drop-shadow-[0_12px_30px_rgba(0,0,0,0.45)]">
-              GABUN
+              Rainforest Parallax
             </h2>
             <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/70 mx-auto">
-              Scroll inside this scene to feel layers separate: hills, canopy, and foreground.
+              Scroll inside this scene to feel layers separate: hills, canopy, fog, and foreground life.
             </p>
           </motion.div>
 
-          {/* Leaf */}
           <motion.img
             src={leaf}
             alt=""
             aria-hidden
             draggable={false}
-            className={`pointer-events-none absolute right-[-6%] top-[-10%] w-[560px] sm:w-[640px] lg:w-[720px] max-w-none select-none opacity-[0.9] ${gpuLayer}`}
+            decoding="async"
+            loading="eager"
+            className="pointer-events-none absolute right-[-6%] top-[-10%] w-[560px] sm:w-[640px] lg:w-[720px] max-w-none select-none opacity-[0.9]"
             style={{ x: reduced ? 0 : leafX, y: reduced ? 0 : leafY }}
           />
 
-          {/* Hills */}
           <motion.img
             src={hill1}
             alt=""
             aria-hidden
             draggable={false}
-            className={`pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.55] ${gpuLayer}`}
+            decoding="async"
+            loading="eager"
+            className="pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.55]"
             style={{ y: reduced ? 0 : h1Y }}
           />
           <motion.img
@@ -188,7 +224,9 @@ function NatureParallaxStage({
             alt=""
             aria-hidden
             draggable={false}
-            className={`pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.65] ${gpuLayer}`}
+            decoding="async"
+            loading="eager"
+            className="pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.65]"
             style={{ y: reduced ? 0 : h2Y }}
           />
           <motion.img
@@ -196,7 +234,9 @@ function NatureParallaxStage({
             alt=""
             aria-hidden
             draggable={false}
-            className={`pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.78] ${gpuLayer}`}
+            decoding="async"
+            loading="eager"
+            className="pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.78]"
             style={{ y: reduced ? 0 : h3Y, x: reduced ? 0 : h3X }}
           />
           <motion.img
@@ -204,7 +244,9 @@ function NatureParallaxStage({
             alt=""
             aria-hidden
             draggable={false}
-            className={`pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.82] ${gpuLayer}`}
+            decoding="async"
+            loading="eager"
+            className="pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.82]"
             style={{ y: reduced ? 0 : h4Y, x: reduced ? 0 : h4X }}
           />
           <motion.img
@@ -212,31 +254,34 @@ function NatureParallaxStage({
             alt=""
             aria-hidden
             draggable={false}
-            className={`pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.9] ${gpuLayer}`}
+            decoding="async"
+            loading="eager"
+            className="pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.9]"
             style={{ y: reduced ? 0 : h5Y, x: reduced ? 0 : h5X }}
           />
 
-          {/* Tree */}
           <motion.img
             src={tree}
             alt=""
             aria-hidden
             draggable={false}
-            className={`pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.82] ${gpuLayer}`}
+            decoding="async"
+            loading="eager"
+            className="pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.82]"
             style={{ y: reduced ? 0 : treeY }}
           />
 
-          {/* Plant */}
           <motion.img
             src={plant}
             alt=""
             aria-hidden
             draggable={false}
-            className={`pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.96] ${gpuLayer}`}
+            decoding="async"
+            loading="eager"
+            className="pointer-events-none absolute left-0 top-0 w-full max-w-none select-none opacity-[0.96]"
             style={{ y: reduced ? 0 : plantY }}
           />
 
-          {/* Humidity highlight */}
           <motion.div
             className="absolute inset-0"
             aria-hidden
@@ -247,7 +292,6 @@ function NatureParallaxStage({
             }}
           />
 
-          {/* Shimmer */}
           {!reduced && (
             <motion.div
               className="pointer-events-none absolute inset-0"
@@ -263,7 +307,6 @@ function NatureParallaxStage({
             />
           )}
 
-          {/* Fog */}
           <motion.div
             className="absolute inset-0"
             aria-hidden
@@ -280,7 +323,6 @@ function NatureParallaxStage({
             }}
           />
 
-          {/* Spores */}
           <div className="absolute inset-0">
             {spores.map((s) => (
               <motion.div
@@ -317,13 +359,11 @@ function NatureParallaxStage({
             ))}
           </div>
 
-          {/* Vignette */}
           <div
             className="absolute inset-0"
             aria-hidden
             style={{
-              background:
-                "radial-gradient(circle at 50% 40%, transparent 45%, rgba(0,0,0,0.58) 78%)",
+              background: "radial-gradient(circle at 50% 40%, transparent 45%, rgba(0,0,0,0.58) 78%)",
             }}
           />
         </div>
@@ -347,8 +387,9 @@ export function NatureScene({ glowA, glowB }: Props) {
       <ParallaxPanel
         reducedMotion={reduced}
         ariaLabel="Big Scrub scene. Scroll inside this panel to move the parallax layers."
-        // ✅ Native scroll = smoothest, least glitchy
-        inertia={false}
+        inertia={true}
+        inertiaEasing={0.14}
+        inertiaWheelMultiplier={1}
         onProgress={(v) => setProgress("nature", v)}
       >
         {({ scrollYProgress }) => (
@@ -362,7 +403,7 @@ export function NatureScene({ glowA, glowB }: Props) {
       </ParallaxPanel>
 
       <div className="border-t border-white/10 px-6 py-4 text-xs text-white/55">
-        "From Guban we collected some of the plants we used to make the fish nets 'Jalum Ngarbany' and dilly 'Jili' bags" - Uncle Rick Cook?
+        Humidity motion: fog background drift + micro scroll ramp + specular shimmer.
       </div>
     </motion.div>
   );
