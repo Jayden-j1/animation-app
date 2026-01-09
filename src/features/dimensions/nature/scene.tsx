@@ -403,7 +403,7 @@ export function NatureScene({ glowA, glowB }: Props) {
       </ParallaxPanel>
 
       <div className="border-t border-white/10 px-6 py-4 text-xs text-white/55">
-        Humidity motion: fog background drift + micro scroll ramp + specular shimmer.
+        "From Gabun we collected some of the plants we used to make fish nets 'Jalum Ngarbany' and dilly 'jili' bags."
       </div>
     </motion.div>
   );
