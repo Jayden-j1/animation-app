@@ -403,7 +403,7 @@ export function NatureScene({ glowA, glowB }: Props) {
       </ParallaxPanel>
 
       <div className="border-t border-white/10 px-6 py-4 text-xs text-white/55">
-        "From Gabun we collected some of the plants we used to make fish nets 'Jalum Ngarbany' and dilly 'jili' bags."
+        "From Gabun we collected some of the plants we used to make fish nets 'Jalum Ngarbany' and dilly 'jili' bags." - Uncle Rick Cook?
       </div>
     </motion.div>
   );
